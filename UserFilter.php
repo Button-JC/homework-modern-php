@@ -1,39 +1,56 @@
 <?php
 
+/**
+ * Class UserFilter
+ * Allows ignore and replacement pattern
+ */
 class UserFilter
 {
-    private string $ignorePattern;
-    private string $replacePattern;
-    private string $replacement;
+    private string $ignorePattern;      // pattern marking string to be ignored
+    private string $replacePattern;     // pattern marking substring for replacement
+    private string $replacement;        // replacement for previous pattern
 
-    public function setIgnorePattern($ignorePattern)
+    /**
+     * @param $ignorePattern String pattern
+     */
+    public function setIgnorePattern(string $ignorePattern)
     {
         $this->ignorePattern = $ignorePattern;
     }
 
-    public function setReplacePattern($replacePattern, $replacement)
+    /**
+     * @param string $replacePattern
+     * @param string $replacement
+     */
+    public function setReplacePattern(string $replacePattern, string $replacement)
     {
         $this->replacePattern = $replacePattern;
         $this->replacement = $replacement;
     }
 
-    public function testIgnorePattern($line): bool
+    /**
+     * Test provided string against ignore pattern
+     * @param string $line to be tested
+     * @return bool true if $line should be ignored
+     */
+    public function testIgnorePattern(string $line): bool
     {
-        if (isset($this->ignorePattern)){
-            //echo($line. " ". $this->ignorePattern." ".preg_match($this->ignorePattern, $line));
+        if (isset($this->ignorePattern)) {
             return preg_match($this->ignorePattern, $line);
         } else {
             return false;
         }
     }
 
-    public function performReplace($line)
+    /**
+     * Performs replacement on line with replacePattern for replacement
+     * @param string $line for replacement search
+     * @return string line with replaced string or unchanged original line if pattern is not found
+     */
+    public function performReplace(string $line): string
     {
         if (isset($this->replacePattern)) {
             return preg_replace($this->replacePattern, $this->replacement, $line);
-            //if(preg_match($this->replacePattern, $line)){
-            //    return $this->replacement;
-            //}
         } else {
             return $line;
         }

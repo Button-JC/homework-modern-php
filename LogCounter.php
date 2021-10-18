@@ -1,14 +1,14 @@
 <?php
 
+const LEVEL_PATTERN = '/test\.(\w+)/';
+
 class LogCounter
 {
-    /** @var String $filename */
-    private string $filename;
-    private ?SplFileObject $file;
-    private array $userFilters;
-    private string $pattern;
-    private array $stats;
-    private array $watchers;
+    private string $filename;       // log filename
+    private ?SplFileObject $file;   // file handler
+    private array $userFilters;     // array of UserFilters
+    private array $stats;           // results statistics array
+    private array $watchers;        // list of callback functions
 
     /**
      * @param string $filename filename of the log
@@ -17,7 +17,6 @@ class LogCounter
     {
         $this->filename = $filename;
         $this->userFilters = [];
-        $this->pattern = '/test\.(\w+)/';
         $this->stats = [];
         $this->watchers = [];
     }
@@ -33,16 +32,24 @@ class LogCounter
 
         // read line
         while (($line = $this->getLine()) !== false) {
-            //apply filters
+
+            // skip empty lines
+            if (strlen($line)<=0) continue;
+
+            // apply filters
             $line = $this->applyFilters($line);
+
             if ($line !== false) { // line is not marked as ignored
+                // add to statistics
                 $this->categorize($line);
             }
+            // run callbacks
             $this->updateWatchers();
         }
 
         // close the file
         $this->file = null;
+        // return final count
         return $this->stats;
     }
 
@@ -90,9 +97,13 @@ class LogCounter
         return $line;
     }
 
+    /**
+     * Determines the correct category and increases its counter
+     * @param string $line String to be categorized
+     */
     private function categorize(string $line)
     {
-        if (preg_match($this->pattern, $line, $matches)) {
+        if (preg_match(LEVEL_PATTERN, $line, $matches)) {
             $level = strtolower($matches[1]);
         } else {
             $level = "Unknown";
@@ -106,6 +117,9 @@ class LogCounter
 
     }
 
+    /**
+     * Runs all current callback functions with up-to-date data
+     */
     private function updateWatchers()
     {
         foreach ($this->watchers as $watcher) {
