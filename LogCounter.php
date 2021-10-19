@@ -8,28 +8,27 @@ class LogCounter
     private ?SplFileObject $file;   // file handler
     private array $userFilters;     // array of UserFilters
     private array $stats;           // results statistics array
-    private array $watchers;        // list of callback functions
 
     /**
      * @param string $filename filename of the log
+     * @throws Exception
      */
     public function __construct(string $filename)
     {
         $this->filename = $filename;
         $this->userFilters = [];
         $this->stats = [];
-        $this->watchers = [];
+
+        // open file
+        $this->openFile();
     }
 
     /**
-     * Main cycle for reading file
+     * Performs one step and returns partial results
      * @throws Exception on file not opening or if lines are too long
      */
-    public function readFile(): array
+    public function stepFileReading(): Generator
     {
-        // open file
-        $this->openFile();
-
         // read line
         while (($line = $this->getLine()) !== false) {
 
@@ -43,14 +42,11 @@ class LogCounter
                 // add to statistics
                 $this->categorize($line);
             }
-            // run callbacks
-            $this->updateWatchers();
+            yield $this->stats;
         }
 
         // close the file
         $this->file = null;
-        // return final count
-        return $this->stats;
     }
 
     /**
@@ -115,33 +111,6 @@ class LogCounter
             $this->stats[$level] = 1;
         }
 
-    }
-
-    /**
-     * Runs all current callback functions with up-to-date data
-     */
-    private function updateWatchers()
-    {
-        foreach ($this->watchers as $watcher) {
-            call_user_func($watcher, $this->stats);
-        }
-
-    }
-
-    /**
-     * @param String $watcher
-     */
-    public function setWatcher(string $watcher): void
-    {
-        array_push($this->watchers, $watcher);
-    }
-
-    /**
-     * @param String $watcher
-     */
-    public function unsetWatcher(string $watcher): void
-    {
-        unset($this->watchers[$watcher]);
     }
 
     /**

@@ -38,32 +38,37 @@ function printSumToConsole(array $data): void
 }
 
 // Create LogCounter instance
-$logCounter = new LogCounter($logFile);
-$logCounter->setWatcher("echoProgress");
-
-// Demonstration of Ignore filter
-$ignoreAlerts = new UserFilter();
-$ignoreAlerts->setIgnorePattern('/test\.ALERT/');
-
-// Demonstration of Replacement filter
-$countNoticeTestMessageAsInfo = new UserFilter();
-$countNoticeTestMessageAsInfo->setReplacePattern('(NOTICE: Test message)', "INFO");
-
-// Add filters to LogCounter
-$logCounter->addUserFilter($ignoreAlerts);
-$logCounter->addUserFilter($countNoticeTestMessageAsInfo);
-
-// Run counter
 try {
-    $data = $logCounter->readFile();
+    $logCounter = new LogCounter($logFile);
 
-    // Override progress with final value
-    printSumToConsole($data);
-    echo "\n-----------" . PHP_EOL;
 
-    // Display final statistic
-    foreach ($data as $level => $count) {
-        echo "$level: $count" . PHP_EOL;
+    // Demonstration of Ignore filter
+    $ignoreAlerts = new UserFilter();
+    $ignoreAlerts->setIgnorePattern('/test\.ALERT/');
+
+    // Demonstration of Replacement filter
+    $countNoticeTestMessageAsInfo = new UserFilter();
+    $countNoticeTestMessageAsInfo->setReplacePattern('(NOTICE: Test message)', "INFO");
+
+    // Add filters to LogCounter
+    $logCounter->addUserFilter($ignoreAlerts);
+    $logCounter->addUserFilter($countNoticeTestMessageAsInfo);
+
+    // Step counter
+    foreach ($logCounter->stepFileReading() as $data) {
+        echoProgress($data);
+    }
+    if (!isset($data)) {
+        echo("No result have been generated.");
+    } else {
+        // Override progress with final value
+        printSumToConsole($data);
+        echo "\n-----------" . PHP_EOL;
+
+        // Display final statistic
+        foreach ($data as $level => $count) {
+            echo "$level: $count" . PHP_EOL;
+        }
     }
 
 } catch (Exception $e) {
